@@ -1,13 +1,13 @@
 const chai = require('chai');
-const chaiHTTP = require('chaiHTTP');
+const chaiHttp = require('chai-http');
 
 const {app, runServer, closeServer} = require('../server');
 
-const expect = chait.expect; 
+const should = chai.should(); 
 
-chai.use(chaiHTTP);
+chai.use(chaiHttp);
 
-describe('Recipes' function() {
+describe('Recipes', function() {
 	before(function() {
 		return runServer();
 	});
@@ -15,13 +15,13 @@ describe('Recipes' function() {
 		return closeServer();
 	});
 
-	it('should show recipes on GET', function() {
+	it('should list recipes on GET', function() {
 		return chai.request(app)
 			.get('/recipes')
 			.then(function(res) {
-				res.should.have.status(204);
+				res.should.have.status(200);
 				res.should.be.json;
-				res.should.be.a('array');
+				res.body.should.be.a('array');
 				res.body.should.have.length.of.at.least(1);
 
 				res.body.forEach(function(item) {
@@ -40,18 +40,18 @@ describe('Recipes' function() {
 			.post('/recipes')
 			.send(newRecipe)
 			.then(function(res) {
-				res.body.should.have.status(204);
+				res.body.should.have.status(201);
 				res.should.be.json;
 				res.body.should.be.a('object');
-				res.body.should.include.key('name', 'id', 'ingredients');
+				res.body.should.include.keys('name', 'id', 'ingredients');
 				res.body.name.should.equal(newRecipe.name);
 				res.body.ingredients.should.be.a('array');
 				res.body.ingredients.should.include.members(newRecipe.ingredients);
 			});
 	});
 
-	it('should update Recipes on PUT', function() {
-		const updateRecipe = {
+	it('should update recipes on PUT', function() {
+		const updateData = {
 			name: 'burnt toast',
 			ingredients: ['fire', 'toast']
 		};
@@ -59,21 +59,23 @@ describe('Recipes' function() {
 		return chai.request(app)
 			.get('/recipes')
 			.then(function(res) {
-				updateRecipe.id = res.body[0].id;
+				updateData.id = res.body[1].id;
+
+				return chai.request(app)
 				.put('/recipes//${updateRecipe.id}')
-				.send(updateRecipe)
-			});
+				.send(updateData)
+			})
 			.then(function(res) {
 				res.should.have.status(204);
 			});
 	});
 
-	it('should delete Recipes on DELETE', function() {
+	it('should delete recipes on DELETE', function() {
 		return chai.request(app)
 			.get('/recipes')
 			.then(function(res) {
 				return chai.request(app)
-					.delete(`/recipes/${res.body[0].id}`)
+					.delete(`/recipes/${res.body[1].id}`)
 			})
 			.then(function(res) {
 				res.should.have.status(204);
